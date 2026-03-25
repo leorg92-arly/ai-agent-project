@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 import argparse
 
 def main():
@@ -15,24 +16,30 @@ def main():
     client = genai.Client(api_key=api_key)
 
     # User text input
-    parser = argparse.ArgumentParser(description="AI Coding Agent")
-    parser.add_argument("user_prompt", type=str, help="User prompt")
+    parser = argparse.ArgumentParser(description="AI Code Agent")
+    parser.add_argument("user_prompt", type=str, help="Prompt to send to Gemini")
     args = parser.parse_args()
     # Now we can access `args.user_prompt` as the contents for Gemini call.
 
+    # Message Content List
+    messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
+    generate_content(client, messages)
+
+def generate_content(client, messages):
     # Create a generative response
     response = client.models.generate_content(
         model = 'gemini-2.5-flash', 
-        contents = args.user_prompt
+        contents = messages
     )
     
     #Token Usage Metadata
-    if response.usage_metadata != None:
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
-    else:
+    if not response.usage_metadata:
         raise RuntimeError("Usage metadata is empty")
-
+    
+    # Print response and token usage metadata to terminal
+    print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+    print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+    print("Response:")
     print(response.text)
 
 
