@@ -1,5 +1,26 @@
+import os
+from dotenv import load_dotenv
+from google import genai
+
 def main():
-    print("Hello from ai-agent-project!")
+    load_dotenv()
+    api_key = os.environ.get("GEMINI_API_KEY")
+
+    # Check for api_key
+    if api_key == None:
+        raise RuntimeError("Create a valid API key first!")
+
+    # Create a client for Google Gen AI
+    client = genai.Client(api_key=api_key)
+
+    # Create a generative response
+    response = client.models.generate_content(
+        model='gemini-2.5-flash', 
+        contents="Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum."
+    )
+    
+    print(response.text)
+
 
 
 if __name__ == "__main__":
