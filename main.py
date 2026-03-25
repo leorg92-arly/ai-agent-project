@@ -19,6 +19,13 @@ def main():
         contents="Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum."
     )
     
+    #Token Usage Metadata
+    if response.usage_metadata != None:
+        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+    else:
+        raise RuntimeError("Usage metadata is empty")
+
     print(response.text)
 
 
