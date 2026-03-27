@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 import argparse
+from prompts import system_prompt
 
 def main():
     load_dotenv()
@@ -35,7 +36,10 @@ def generate_content(client, messages, is_verbose):
     # Calling Gemini
     response = client.models.generate_content(
         model = 'gemini-2.5-flash', 
-        contents = messages
+        contents = messages,
+        # temperature helps with consistency
+        config = types.GenerateContentConfig(system_instruction=system_prompt
+                                             ,temperature=0),
     )
     
     #Token Usage Metadata
