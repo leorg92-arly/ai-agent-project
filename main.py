@@ -1,17 +1,22 @@
 import os
+import argparse
+
+# Importing third party libraries
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-import argparse
+
+# Importing from project files
 from prompts import system_prompt
 from call_functions import available_functions
+from call_functions import call_function
 
 def main():
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
 
-    # Check for api_key
-    if api_key == None:
+    # Validating for api_key
+    if not api_key:
         raise RuntimeError("Create a valid API key first!")
 
     # Create a client for Google Gen AI
@@ -29,6 +34,9 @@ def main():
                               parts=[types.Part(text=args.user_prompt)])
                 ]
     
+    if args.verbose:
+        print(f"User prompt: {args.user_prompt}")
+
     # Call Gemini
     generate_content(client, messages, args.verbose)
 
@@ -36,36 +44,49 @@ def main():
 def generate_content(client, messages, is_verbose):
     # Calling Gemini
     response = client.models.generate_content(
-        model = 'gemini-2.5-flash', 
-        contents = messages,
+        model='gemini-2.5-flash', 
+        contents=messages,
         # temperature helps with consistency
-        config = types.GenerateContentConfig(tools=[available_functions]
-                                             ,system_instruction=system_prompt
-                                             ,temperature=0),
+        config=types.GenerateContentConfig(tools=[available_functions],
+                                             system_instruction=system_prompt,
+                                             temperature=0
+                                        ),
     )
     
-    #Token Usage Metadata
+    #Token Usage Metadata check
     if not response.usage_metadata:
         raise RuntimeError("Usage metadata is empty")
     
+    response_list = []
+
     # Print response and token usage metadata to terminal
     if is_verbose:
-        print(f"User prompt: {messages[0].parts[0].text}")
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
         print("Response:")
-        print_function_calls(response)
-    else:
-        print_function_calls(response)
 
-def print_function_calls(response):
-    if response.function_calls:
-       for function_call in response.function_calls:
-           print(f"Calling function: {function_call.name}({function_call.args})")
-    
-    else:
-       print(response.text)
+    result_function_calls(response, is_verbose, response_list)
+
+def result_function_calls(response, is_verbose, response_list):
+    if not response.function_calls:
+        print(response.text)
+        return
+
+    for function_call in response.function_calls:
+        result = call_function(function_call, is_verbose)
+
+        if (
+            not result.parts
+            or not result.parts[0].function_response
+            or not result.parts[0].function_response.response
+            ):
+            raise Exception(f"Empty function response for {function_call.name}")
+        
+        if is_verbose:
+            print(f"-> {result.parts[0].function_response.response}")
+
+        # The function doesn't return anything. Lists are mutable objects.
+        response_list.append(result.parts[0].function_response.response)
 
 if __name__ == "__main__":
     main()
-
