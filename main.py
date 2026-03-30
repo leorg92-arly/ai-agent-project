@@ -93,6 +93,7 @@ def generate_content(client, messages, is_verbose):
     
     messages.append(types.Content(role="user", parts=response_list))
 
+# Handles the function calls of the agent
 def result_function_calls(response, is_verbose, response_list):
     if not response.function_calls:
         print(response.text)
