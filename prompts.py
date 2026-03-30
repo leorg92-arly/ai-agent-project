@@ -1,5 +1,6 @@
 system_prompt = """
 You are a helpful AI coding agent.
+Unless asked otherwise, you need to be concise in your responses.
 
 When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
 
